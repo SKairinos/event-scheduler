@@ -18,6 +18,7 @@ class SchedulerTests(TestCase):
         cls.time_1000 = Time(hour=10, minute=0)
         cls.time_1030 = Time(hour=10, minute=30)
         cls.time_1100 = Time(hour=11, minute=0)
+        cls.time_1130 = Time(hour=11, minute=30)
         cls.time_1700 = Time(hour=17, minute=0)
         cls.time_1800 = Time(hour=18, minute=0)
 
@@ -51,6 +52,11 @@ class SchedulerTests(TestCase):
             end=DateTime.combine(cls.date, cls.time_1100),
             name='Meeting between 10:00 and 11:00'
         )
+        cls.event_1030_to_1130 = Event(
+            start=DateTime.combine(cls.date, cls.time_1030),
+            end=DateTime.combine(cls.date, cls.time_1130),
+            name='Meeting between 10:30 and 11:30'
+        )
         cls.event_1700_to_1800 = Event(
             start=DateTime.combine(cls.date, cls.time_1700),
             end=DateTime.combine(cls.date, cls.time_1800),
@@ -82,48 +88,6 @@ class SchedulerTests(TestCase):
         # Edit schedule dict.
         schedule.pop(self.date)
         self.assertListEqual(self.scheduler._schedule[self.date], events)
-
-    def test_schedule_event(self):
-        # Assert events are added in the correct order.
-        self.scheduler.schedule_event(self.event_0930_to_1000)
-        self.scheduler.schedule_event(self.event_1030_to_1100)
-        self.scheduler.schedule_event(self.event_1000_to_1030)
-        self.scheduler.schedule_event(self.event_0900_to_0930)
-        self.assertListEqual(self.scheduler._schedule[self.date], [
-            self.event_0900_to_0930,
-            self.event_0930_to_1000,
-            self.event_1000_to_1030,
-            self.event_1030_to_1100
-        ])
-
-    def test_schedule_event__reschedule_same_day(self):
-        self.scheduler.schedule_event(self.event_0900_to_0930)
-        self.scheduler.schedule_event(self.event_0900_to_1000)
-        self.assertListEqual(self.scheduler._schedule[self.date], [
-            self.event_0900_to_0930,
-            Event(
-                start=DateTime.combine(self.date, self.time_0930),
-                end=DateTime.combine(self.date, self.time_1030),
-                name=self.event_0900_to_1000.name
-            )
-        ])
-
-    def test_schedule_event__reschedule_next_day(self):
-        self.scheduler.schedule_event(self.event_0900_to_1800)
-        self.scheduler.schedule_event(self.event_0900_to_1000)
-        next_day = Date(year=2022, month=11, day=14)
-        self.assertDictEqual(self.scheduler._schedule, {
-            self.date: [
-                self.event_0900_to_1800
-            ],
-            next_day: [
-                Event(
-                    start=DateTime.combine(next_day, self.time_0900),
-                    end=DateTime.combine(next_day, self.time_1000),
-                    name=self.event_0900_to_1000.name
-                )
-            ]
-        })
 
     def test_get_availabilities__no_events(self):
         availabilities = self.scheduler.get_availabilities(self.date)
@@ -242,3 +206,66 @@ class SchedulerTests(TestCase):
                 name=self.event_0900_to_1000.name
             )
         ])
+
+    def test_schedule_event(self):
+        # Assert events are added in the correct order.
+        rescheduled = self.scheduler.schedule_event(self.event_0930_to_1000)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_1030_to_1100)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_1000_to_1030)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_0900_to_0930)
+        self.assertFalse(rescheduled)
+
+        self.assertListEqual(self.scheduler._schedule[self.date], [
+            self.event_0900_to_0930,
+            self.event_0930_to_1000,
+            self.event_1000_to_1030,
+            self.event_1030_to_1100
+        ])
+
+    def test_schedule_event__reschedule_overlapping_event__same_day(self):
+        rescheduled = self.scheduler.schedule_event(self.event_0900_to_0930)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_0900_to_1000)
+        self.assertTrue(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_1030_to_1100)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_1030_to_1130)
+        self.assertTrue(rescheduled)
+
+        self.assertListEqual(self.scheduler._schedule[self.date], [
+            self.event_0900_to_0930,
+            Event(
+                start=DateTime.combine(self.date, self.time_0930),
+                end=DateTime.combine(self.date, self.time_1030),
+                name=self.event_0900_to_1000.name
+            ),
+            self.event_1030_to_1100,
+            Event(
+                start=DateTime.combine(self.date, self.time_1100),
+                end=DateTime.combine(self.date, Time(hour=12, minute=0)),
+                name=self.event_1030_to_1130.name
+            )
+        ])
+
+    def test_schedule_event__reschedule_overlapping_event__next_day(self):
+        rescheduled = self.scheduler.schedule_event(self.event_0900_to_1800)
+        self.assertFalse(rescheduled)
+        rescheduled = self.scheduler.schedule_event(self.event_0900_to_1000)
+        self.assertTrue(rescheduled)
+
+        next_day = Date(year=2022, month=11, day=14)
+        self.assertDictEqual(self.scheduler._schedule, {
+            self.date: [
+                self.event_0900_to_1800
+            ],
+            next_day: [
+                Event(
+                    start=DateTime.combine(next_day, self.time_0900),
+                    end=DateTime.combine(next_day, self.time_1000),
+                    name=self.event_0900_to_1000.name
+                )
+            ]
+        })
