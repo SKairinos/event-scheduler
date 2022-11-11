@@ -7,9 +7,14 @@ from pydantic import BaseModel, Field, root_validator
 
 
 class DateTimeSpan(BaseModel):
+    """A span between start and end datetimes."""
 
     # autopep8: off
-    class StartGreaterThanOrEqualToEndError(ValueError): pass
+    class Error(ValueError):
+        """Base error from which all other custom errors inherit from."""
+        def __str__(self) -> str:
+            return f'{self.__class__.__name__}: {super().__str__()}'
+    class StartGreaterThanOrEqualToEndError(Error): pass
     # autopep8: on
 
     start: DateTime = Field()
@@ -17,6 +22,7 @@ class DateTimeSpan(BaseModel):
 
     @root_validator(pre=True)
     def start_lt_end(cls, values: t.Dict[str, t.Any]):
+        """Validate start is less than end."""
         start: t.Optional[DateTime] = values.get('start')
         end: t.Optional[DateTime] = values.get('end')
         if start is not None and end is not None and start >= end:
@@ -44,6 +50,12 @@ class DateTimeSpan(BaseModel):
         return self.end - self.start
 
     def overlaps_with(self, span: DateTimeSpan, equals: bool):
+        """Checks if this span overlaps with another span.
+
+        :param span: The other span to check for an overlap.
+        :param equals: Whether self.start == span.end or span.start == self.end is an overlap. 
+        :return: A flag determining if this span overlaps with the other.
+        """
         return (
             span.start <= self.start <= span.end
             or span.start <= self.end <= span.end
@@ -54,12 +66,11 @@ class DateTimeSpan(BaseModel):
 
     @classmethod
     def merge(cls, span_1: DateTimeSpan, span_2: DateTimeSpan):
-        """Merge two overlapping time spans.
+        """Merge two overlapping spans.
 
-        :param time_span_1: The first time span to merge.   
-        :param time_span_2: The second time span to merge.
-        :return: A new time span with the merged start and end.
-            If the time spans are not overlapping, None is returned.   
+        :param span_1: The first span to merge.   
+        :param span_2: The second span to merge.
+        :return: The merged span. If the spans are not overlapping, None is returned.   
         """
         if span_1.overlaps_with(span_2, equals=True):
             return cls(

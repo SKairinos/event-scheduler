@@ -68,18 +68,21 @@ class TimeSpanTests(PyDanticTestCase):
         self.assertFalse(self.dts_0930_1000.overlaps_with(self.dts_0900_0930, equals=False))
 
     def test_merge(self):
+        # Assert can merge datetime spans.
         date_time_span = DateTimeSpan.merge(self.dts_0900_1000, self.dts_0830_0930)
         self.assertEqual(date_time_span, DateTimeSpan(
             start=DateTime.combine(self.date, Time(hour=8, minute=30)),
             end=DateTime.combine(self.date, Time(hour=10, minute=0))
         ))
 
+        # Assert can merge datetime spans.
         date_time_span = DateTimeSpan.merge(date_time_span, self.dts_1000_1030)
         self.assertEqual(date_time_span, DateTimeSpan(
             start=DateTime.combine(self.date, Time(hour=8, minute=30)),
             end=DateTime.combine(self.date, Time(hour=10, minute=30))
         ))
 
+        # Assert cannot merge datetime spans.
         date_time_span = DateTimeSpan.merge(date_time_span, self.dts_1400_1500)
         self.assertIsNone(date_time_span)
 
@@ -88,3 +91,10 @@ class TimeSpanTests(PyDanticTestCase):
 
     def test__lt__(self):
         self.assertLess(self.dts_0900_1000, self.dts_1000_1030)
+
+    def test__eq__(self):
+        self.assertEqual(self.dts_0900_1000, self.dts_0900_1000)
+        self.assertNotEqual(self.dts_0900_1000, self.dts_1000_1030)
+
+    def test__str__(self):
+        self.assertEqual(str(self.dts_0900_1000), '2022/11/10 09:00 -> 2022/11/10 10:00')
