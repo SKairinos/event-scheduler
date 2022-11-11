@@ -20,7 +20,7 @@ This repo is my solution to the task described in task_description.pdf.
 
 Sample run:
 
-```shell
+```txt
 Enter blank line to stop event collection.
 New Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
 Scheduled Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
@@ -47,7 +47,7 @@ New Event:
 
 - If error(s) occurs, a human readable description will be printed.
 
-```shell
+```txt
 root: 2 validation errors for Event
 start
   InvalidWeekDayError: Dates must be between Monday and Friday (type=value_error.invalidweekday)
@@ -57,19 +57,19 @@ end
 
 - An event's scheduled start and end time are printed after each entry.
 
-```shell
+```txt
 Scheduled Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
 ```
 
 - If an event is rescheduled, it will be stated.
 
-```shell
+```txt
 Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 10:00 - Dance party
 ```
 
 - The complete schedule will be printed once all events are collected.
 
-```shell
+```txt
 2022-08-23
         2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
         2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
