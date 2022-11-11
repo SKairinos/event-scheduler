@@ -1,6 +1,7 @@
 from __future__ import annotations
 import typing as t
 from datetime import datetime as DateTime
+from datetime import date as Date
 from datetime import time as Time
 import re
 
@@ -17,9 +18,9 @@ class Event(DateTimeSpan):
     class InvalidTimeError(DateTimeSpan.Error): pass
     class StartOfDayError(DateTimeSpan.Error): pass
     class EndOfDayError(DateTimeSpan.Error): pass
-    class StartDateNotEqualToEndDateError(DateTimeSpan.Error): pass
     class InvalidFormatError(DateTimeSpan.Error): pass
     class InvalidDateTimeFormatError(InvalidFormatError): pass
+    class TimeDeltaTooLargeError(DateTimeSpan.Error): pass
     # autopep8: on
 
     name: str = Field(min_length=1)
@@ -60,12 +61,16 @@ class Event(DateTimeSpan):
         return value
 
     @root_validator(pre=True)
-    def start_date_eq_end_date(cls, values: t.Dict[str, t.Any]):
-        """Validate start and end are on the same date."""
+    def lte_max_timedelta(cls, values: t.Dict[str, t.Any]):
+        """Validate the timedelta between start and end doesn't exceed the max."""
         start: t.Optional[DateTime] = values.get('start')
         end: t.Optional[DateTime] = values.get('end')
-        if start is not None and end is not None and start.date() != end.date():
-            raise cls.StartDateNotEqualToEndDateError('The start and end dates must be equal')
+        if start is not None and end is not None:
+            today = Date.today()
+            start_of_day = DateTime.combine(today, cls._start_of_day)
+            end_of_day = DateTime.combine(today, cls._end_of_day)
+            if end - start > end_of_day - start_of_day:
+                raise cls.TimeDeltaTooLargeError('The timedelta between start and end is too large')
         return values
 
     def __str__(self) -> str:

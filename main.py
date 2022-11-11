@@ -1,5 +1,7 @@
+import typing as t
 from argparse import ArgumentParser
 from itertools import groupby
+from collections import defaultdict
 import logging
 
 from pydantic import ValidationError
@@ -9,6 +11,7 @@ from event import Event
 
 
 def print_schedule(schedule: Scheduler.Schedule):
+    """Pretty prints the schedule."""
     for date, events in schedule.items():
         print(f'\n{date}')
         for event in events:
@@ -16,13 +19,15 @@ def print_schedule(schedule: Scheduler.Schedule):
 
 
 def get_field_errors(error: ValidationError):
+    """Gets the unique exception types per data model field."""
     def error_wrapper_key(error_wrapper): return error_wrapper._loc
     error_wrappers = list(error.raw_errors)
     error_wrappers.sort(key=error_wrapper_key)
-    return {
-        name: [error.exc for error in errors]
-        for name, errors in groupby(error_wrappers, key=error_wrapper_key)
-    }
+
+    field_errors: t.DefaultDict[str, t.Set[t.Type[Event.Error]]] = defaultdict(set)
+    for name, errors in groupby(error_wrappers, key=error_wrapper_key):
+        field_errors[name] = {type(error.exc) for error in errors}
+    return field_errors
 
 
 if __name__ == '__main__':
@@ -54,22 +59,23 @@ if __name__ == '__main__':
                 try:
                     # Create event using fields.
                     event = Event(**event_fields)
-                    scheduler.schedule_event(event)
-                    print('Scheduled Event:', event)
+                    rescheduled = scheduler.schedule_event(event)
+                    print(('Rescheduled' if rescheduled else 'Scheduled') + ' Event:', event)
                 except ValidationError as error:
                     logging.error(error)
                     field_errors = get_field_errors(error)
-
-                    if 'start' in field_errors and all(
-                        type(error) in [Event.InvalidWeekDayError, Event.InvalidTimeError]
-                        for error in field_errors['start']
+                    # Reschedule event if set on invalid weekday or time.
+                    if Event.TimeDeltaTooLargeError not in field_errors['__root__'] and (
+                        Event.InvalidWeekDayError in field_errors['start']
+                        or Event.InvalidWeekDayError in field_errors['end']
+                        or Event.InvalidTimeError in field_errors['start']
+                        or Event.InvalidTimeError in field_errors['end']
                     ):
                         # Reschedule event if datetimes are invalid.
                         event = scheduler.reschedule_invalid_event(**event_fields)
                         print('Rescheduled Event:', event)
-
                 except Exception as ex:
-                    logging.error('Unknown error. Stopping event collection.')
+                    logging.error('Unknown error. Skipping this event.')
                     break
             except Event.Error as error:
                 logging.error(error)
@@ -78,8 +84,3 @@ if __name__ == '__main__':
                 break
 
         print_schedule(scheduler.schedule)
-
-
-# 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
-# 2022/08/23 15:15 -> 2022/08/23 16:00 - Guitar lessons
-# 2022/11/12 15:00 -> 2022/11/12 16:00 - Meet Jamie for coffee

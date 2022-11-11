@@ -114,11 +114,22 @@ class EventTests(PyDanticTestCase):
             name='Meeting starting at start of day'
         )
 
-    def test_root_validator__start_date_eq_end_date(self):
+    def test_root_validator__lte_max_timedelta(self):
+        # Assert time between start and end cannot exceed max timedelta.
+        self.assert_raises_validation_error(
+            field_errors=[
+                ('__root__', Event.TimeDeltaTooLargeError)
+            ],
+            model_type=Event,
+            start=DateTime(year=2022, month=11, day=9, hour=9, minute=0),
+            end=DateTime(year=2022, month=11, day=9, hour=19, minute=0),
+            name='Meeting starting at end of day'
+        )
+
         # Assert start cannot be on different date to end.
         self.assert_raises_validation_error(
             field_errors=[
-                ('__root__', Event.StartDateNotEqualToEndDateError)
+                ('__root__', Event.TimeDeltaTooLargeError)
             ],
             model_type=Event,
             start=DateTime(year=2022, month=11, day=9, hour=9, minute=0),
