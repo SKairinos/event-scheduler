@@ -4,7 +4,6 @@ from datetime import time as Time
 
 from ._base import PyDanticTestCase
 from event import Event
-from date_time_span import DateTimeSpan
 
 
 class EventTests(PyDanticTestCase):
@@ -25,12 +24,12 @@ class EventTests(PyDanticTestCase):
         self.assertEqual(event_1.end, event_2.end)
         self.assertEqual(event_1.name, event_2.name)
 
-    def test_validator__valid_day(self):
+    def test_validator__valid_weekday(self):
         # Assert cannot meet on Saturday.
         self.assert_raises_validation_error(
             field_errors=[
-                ('start', Event.InvalidDayError),
-                ('end', Event.InvalidDayError)
+                ('start', Event.InvalidWeekDayError),
+                ('end', Event.InvalidWeekDayError)
             ],
             model_type=Event,
             start=DateTime(year=2022, month=11, day=12, hour=9, minute=0),
@@ -41,13 +40,13 @@ class EventTests(PyDanticTestCase):
         # Assert cannot meet on Sunday.
         self.assert_raises_validation_error(
             field_errors=[
-                ('start', Event.InvalidDayError),
-                ('end', Event.InvalidDayError)
+                ('start', Event.InvalidWeekDayError),
+                ('end', Event.InvalidWeekDayError)
             ],
             model_type=Event,
             start=DateTime(year=2022, month=11, day=13, hour=9, minute=0),
             end=DateTime(year=2022, month=11, day=13, hour=10, minute=0),
-            name='Meeting on Saturday'
+            name='Meeting on Sunday'
         )
 
     def test_validator__valid_time(self):
@@ -115,7 +114,7 @@ class EventTests(PyDanticTestCase):
             name='Meeting starting at start of day'
         )
 
-    def test_root_validator__date__start_eq_end(self):
+    def test_root_validator__start_date_eq_end_date(self):
         # Assert start cannot be on different date to end.
         self.assert_raises_validation_error(
             field_errors=[
@@ -131,72 +130,24 @@ class EventTests(PyDanticTestCase):
         # Assert stringified object is formatted as expected.
         self.assertEqual(str(self.event), self.event_str)
 
-    def test_from_str(self):
-        # Assert event object is created from string.
-        event = Event.from_str(self.event_str)
-        self.assert_event_equal(event, self.event)
+    def test__eq__(self):
+        self.assertEqual(self.event, self.event)
+        self.assertNotEqual(self.event, Event(
+            start=self.event.start,
+            end=self.event.end,
+            name=self.event.name + ' something random',
+        ))
 
-    def test_from_str__invalid_format(self):
+    def test_fields_from_str(self):
+        # Assert event object is created from string.
+        fields = Event.fields_from_str(self.event_str)
+        self.assert_event_equal(Event(**fields), self.event)
+
+    def test_fields_from_str__invalid_format(self):
         # Assert invalid format.
         with self.assertRaises(Event.InvalidFormatError):
-            Event.from_str('2022/08/23 15:00 -> 2022/08/23 16:00')
+            Event.fields_from_str('2022/08/23 15:00 -> 2022/08/23 16:00')
 
         # Assert invalid DateTime format.
         with self.assertRaises(Event.InvalidDateTimeFormatError):
-            Event.from_str('2022/08/23 15:00 -> 2022/08/23 - Hello World')
-
-    def test_merge_date_time_spans(self):
-        date_22_11_10 = Date(year=2022, month=11, day=10)
-        date_22_11_11 = Date(year=2022, month=11, day=11)
-
-        date_time_spans = Event.merge_date_time_spans([
-            Event(
-                start=DateTime.combine(date_22_11_10, Time(hour=9, minute=0)),
-                end=DateTime.combine(date_22_11_10, Time(hour=9, minute=30)),
-                name='Meeting between 9:00 and 9:30'
-            ),
-            Event(
-                start=DateTime.combine(date_22_11_11, Time(hour=12, minute=0)),
-                end=DateTime.combine(date_22_11_11, Time(hour=12, minute=30)),
-                name='Meeting between 12:00 and 12:30'
-            ),
-            Event(
-                start=DateTime.combine(date_22_11_10, Time(hour=9, minute=30)),
-                end=DateTime.combine(date_22_11_10, Time(hour=10, minute=30)),
-                name='Meeting between 9:30 and 10:30'
-            ),
-            Event(
-                start=DateTime.combine(date_22_11_11, Time(hour=11, minute=0)),
-                end=DateTime.combine(date_22_11_11, Time(hour=12, minute=0)),
-                name='Meeting between 11:00 and 12:00'
-            ),
-            Event(
-                start=DateTime.combine(date_22_11_11, Time(hour=13, minute=30)),
-                end=DateTime.combine(date_22_11_11, Time(hour=14, minute=0)),
-                name='Meeting between 13:30 and 14:00'
-            ),
-            Event(
-                start=DateTime.combine(date_22_11_11, Time(hour=13, minute=0)),
-                end=DateTime.combine(date_22_11_11, Time(hour=13, minute=30)),
-                name='Meeting between 13:00 and 13:30'
-            )
-        ])
-
-        self.assertDictEqual(date_time_spans, {
-            date_22_11_10: [
-                DateTimeSpan(
-                    start=DateTime.combine(date_22_11_10, Time(hour=9, minute=0)),
-                    end=DateTime.combine(date_22_11_10, Time(hour=10, minute=30))
-                )
-            ],
-            date_22_11_11: [
-                DateTimeSpan(
-                    start=DateTime.combine(date_22_11_11, Time(hour=11, minute=0)),
-                    end=DateTime.combine(date_22_11_11, Time(hour=12, minute=30))
-                ),
-                DateTimeSpan(
-                    start=DateTime.combine(date_22_11_11, Time(hour=13, minute=0)),
-                    end=DateTime.combine(date_22_11_11, Time(hour=14, minute=0))
-                )
-            ]
-        })
+            Event.fields_from_str('2022/08/23 15:00 -> 2022/08/23 - Hello World')

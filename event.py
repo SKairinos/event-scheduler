@@ -1,9 +1,7 @@
 from __future__ import annotations
 import typing as t
 from datetime import datetime as DateTime
-from datetime import date as Date
 from datetime import time as Time
-from itertools import groupby
 import re
 
 from pydantic import Field, validator, root_validator
@@ -12,52 +10,58 @@ from date_time_span import DateTimeSpan
 
 
 class Event(DateTimeSpan):
+    """A named datetime span. This can be thought of as a calendar appointment."""
 
     # autopep8: off
-    class Error(ValueError):
-        def __str__(self) -> str:
-            return f'{self.__class__.__name__}: {super().__str__()}'
-    class InvalidDayError(Error): pass
-    class InvalidTimeError(Error): pass
-    class StartOfDayError(Error): pass
-    class EndOfDayError(Error): pass
-    class StartDateNotEqualToEndDateError(Error): pass
-    class InvalidFormatError(Error): pass
+    class InvalidWeekDayError(DateTimeSpan.Error): pass
+    class InvalidTimeError(DateTimeSpan.Error): pass
+    class StartOfDayError(DateTimeSpan.Error): pass
+    class EndOfDayError(DateTimeSpan.Error): pass
+    class StartDateNotEqualToEndDateError(DateTimeSpan.Error): pass
+    class InvalidFormatError(DateTimeSpan.Error): pass
     class InvalidDateTimeFormatError(InvalidFormatError): pass
     # autopep8: on
 
     name: str = Field(min_length=1)
 
-    _valid_days = [0, 1, 2, 3, 4]
+    # Setting to control which weekdays an event can be created for. 0=Monday -> 6=Sunday.
+    _valid_weekdays = [0, 1, 2, 3, 4]
+    # Setting to control what time of day events may start at the earliest.
     _start_of_day = Time(hour=9, minute=0)
+    # Setting to control what time of day events may end at the latest.
     _end_of_day = Time(hour=18, minute=0)
 
     @validator('start', 'end')
-    def valid_day(cls, value: DateTime):
-        if not value.weekday() in cls._valid_days:
-            raise cls.InvalidDayError('Dates must be between Monday and Friday')
+    def valid_weekday(cls, value: DateTime):
+        """Validate start and end are on a valid weekday."""
+        if not value.weekday() in cls._valid_weekdays:
+            raise cls.InvalidWeekDayError('Dates must be between Monday and Friday')
         return value
 
     @validator('start', 'end')
     def valid_time(cls, value: DateTime):
+        """Validate start and end times are between the start and end of the day."""
         if not (cls._start_of_day <= value.time() <= cls._end_of_day):
             raise cls.InvalidTimeError('Times must be between 9:00 and 18:00')
         return value
 
     @validator('start')
     def not_end_of_day(cls, value: DateTime):
+        """Validate start is not at the end of the day."""
         if value.time() == cls._end_of_day:
             raise cls.EndOfDayError('Cannot start an event at the end of the day')
         return value
 
     @validator('end')
     def not_start_of_day(cls, value: DateTime):
+        """Validate end is not at the start of the day."""
         if value.time() == cls._start_of_day:
             raise cls.StartOfDayError('Cannot end an event at the start of the day')
         return value
 
     @root_validator(pre=True)
-    def date__start_eq_end(cls, values: t.Dict[str, t.Any]):
+    def start_date_eq_end_date(cls, values: t.Dict[str, t.Any]):
+        """Validate start and end are on the same date."""
         start: t.Optional[DateTime] = values.get('start')
         end: t.Optional[DateTime] = values.get('end')
         if start is not None and end is not None and start.date() != end.date():
@@ -72,6 +76,13 @@ class Event(DateTimeSpan):
 
     @classmethod
     def fields_from_str(cls, event: str):
+        """Extracts the fields needed to instantiate an event from a string. 
+
+        :param event: The event in string format.
+        :raises cls.InvalidFormatError: If the string is not in the expected format.
+        :raises cls.InvalidDateTimeFormatError: If the start and end are not in the expected format.
+        :return: A dict with the named fields needed to create an event. event = Event(**fields). 
+        """
         # Match event pattern.
         match = re.match(r'(.+)->(.+)-(.+)', event)
         if not match:
@@ -79,7 +90,7 @@ class Event(DateTimeSpan):
                 'Expected format: "<start_date> -> <end_date> - <event_name>"'
             )
 
-        # Get event attributes.
+        # Get event fields.
         start = match.group(1).strip()
         end = match.group(2).strip()
         name = match.group(3).strip()
@@ -98,35 +109,3 @@ class Event(DateTimeSpan):
             'end': to_datetime(end),
             'name': name
         }
-
-    @classmethod
-    def from_str(cls, event: str):
-        return cls(**cls.fields_from_str(event))
-
-    @staticmethod
-    def merge_date_time_spans(events: t.List[Event]):
-        # Group events by date.
-        def group_key(event: Event):
-            return event.start.date()
-        events.sort(key=group_key)
-        grouped_spans = {
-            date: list(events)
-            for date, events in groupby(events, key=group_key)
-        }
-
-        # For each date, merge events' spans.
-        merged_spans: t.Dict[Date, t.List[DateTimeSpan]] = {}
-        for date, spans in grouped_spans.items():
-            merged_spans[date] = []
-            spans.sort()
-            while spans:
-                span = spans.pop(0)
-                while spans:
-                    merged_span = DateTimeSpan.merge(span, spans[0])
-                    if merged_span is None:
-                        break
-                    else:
-                        span = merged_span
-                        spans.pop(0)
-                merged_spans[date].append(span)
-        return merged_spans

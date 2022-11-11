@@ -1,7 +1,7 @@
+from datetime import timedelta as TimeDelta
 from datetime import datetime as DateTime
 from datetime import date as Date
 from datetime import time as Time
-from datetime import timedelta as TimeDelta
 
 from ._base import PyDanticTestCase
 from date_time_span import DateTimeSpan
@@ -85,6 +85,56 @@ class TimeSpanTests(PyDanticTestCase):
         # Assert cannot merge datetime spans.
         date_time_span = DateTimeSpan.merge(date_time_span, self.dts_1400_1500)
         self.assertIsNone(date_time_span)
+
+    def test_merge_many(self):
+        date_22_11_10 = Date(year=2022, month=11, day=10)
+        date_22_11_11 = Date(year=2022, month=11, day=11)
+
+        date_time_spans = DateTimeSpan.merge_many([
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_10, Time(hour=9, minute=0)),
+                end=DateTime.combine(date_22_11_10, Time(hour=9, minute=30))
+            ),
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_11, Time(hour=12, minute=0)),
+                end=DateTime.combine(date_22_11_11, Time(hour=12, minute=30))
+            ),
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_10, Time(hour=9, minute=30)),
+                end=DateTime.combine(date_22_11_10, Time(hour=10, minute=30))
+            ),
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_11, Time(hour=11, minute=0)),
+                end=DateTime.combine(date_22_11_11, Time(hour=12, minute=0))
+            ),
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_11, Time(hour=13, minute=30)),
+                end=DateTime.combine(date_22_11_11, Time(hour=14, minute=0))
+            ),
+            DateTimeSpan(
+                start=DateTime.combine(date_22_11_11, Time(hour=13, minute=0)),
+                end=DateTime.combine(date_22_11_11, Time(hour=13, minute=30))
+            )
+        ])
+
+        self.assertDictEqual(date_time_spans, {
+            date_22_11_10: [
+                DateTimeSpan(
+                    start=DateTime.combine(date_22_11_10, Time(hour=9, minute=0)),
+                    end=DateTime.combine(date_22_11_10, Time(hour=10, minute=30))
+                )
+            ],
+            date_22_11_11: [
+                DateTimeSpan(
+                    start=DateTime.combine(date_22_11_11, Time(hour=11, minute=0)),
+                    end=DateTime.combine(date_22_11_11, Time(hour=12, minute=30))
+                ),
+                DateTimeSpan(
+                    start=DateTime.combine(date_22_11_11, Time(hour=13, minute=0)),
+                    end=DateTime.combine(date_22_11_11, Time(hour=14, minute=0))
+                )
+            ]
+        })
 
     def test_timedelta(self):
         self.assertEqual(self.dts_0900_1000.timedelta, TimeDelta(hours=1))

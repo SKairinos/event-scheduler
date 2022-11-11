@@ -7,7 +7,6 @@ import subprocess
 import sys
 
 from main import print_schedule
-from scheduler import Scheduler
 from event import Event
 
 

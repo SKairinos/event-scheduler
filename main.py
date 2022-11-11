@@ -61,7 +61,7 @@ if __name__ == '__main__':
                     field_errors = get_field_errors(error)
 
                     if 'start' in field_errors and all(
-                        type(error) in [Event.InvalidDayError, Event.InvalidTimeError]
+                        type(error) in [Event.InvalidWeekDayError, Event.InvalidTimeError]
                         for error in field_errors['start']
                     ):
                         # Reschedule event if datetimes are invalid.

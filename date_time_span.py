@@ -2,6 +2,8 @@ from __future__ import annotations
 import typing as t
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
+from datetime import date as Date
+from itertools import groupby
 
 from pydantic import BaseModel, Field, root_validator
 
@@ -53,7 +55,7 @@ class DateTimeSpan(BaseModel):
         """Checks if this span overlaps with another span.
 
         :param span: The other span to check for an overlap.
-        :param equals: Whether self.start == span.end or span.start == self.end is an overlap. 
+        :param equals: Whether self.start == span.end or span.start == self.end is an overlap.
         :return: A flag determining if this span overlaps with the other.
         """
         return (
@@ -64,16 +66,49 @@ class DateTimeSpan(BaseModel):
             or span.start < self.end <= span.end
         )
 
-    @classmethod
-    def merge(cls, span_1: DateTimeSpan, span_2: DateTimeSpan):
+    @staticmethod
+    def merge(span_1: DateTimeSpan, span_2: DateTimeSpan):
         """Merge two overlapping spans.
 
-        :param span_1: The first span to merge.   
+        :param span_1: The first span to merge.
         :param span_2: The second span to merge.
-        :return: The merged span. If the spans are not overlapping, None is returned.   
+        :return: The merged span. If the spans are not overlapping, None is returned.
         """
         if span_1.overlaps_with(span_2, equals=True):
-            return cls(
+            return DateTimeSpan(
                 start=span_1.start if span_1.start <= span_2.start else span_2.start,
                 end=span_1.end if span_1.end >= span_2.end else span_2.end
             )
+
+    @classmethod
+    def merge_many(cls, spans: t.List[DateTimeSpan]):
+        """Merge the all the spans that can be merged together.
+
+        :param spans: The list of spans to merge together.
+        :return: A dict where the key is a date and the value is the merged spans for that date.
+        """
+        # Group events by date.
+        def key(span: DateTimeSpan):
+            return span.start.date()
+        spans.sort(key=key)
+        grouped_spans = {
+            date: list(spans)
+            for date, spans in groupby(spans, key=key)
+        }
+
+        # For each date, merge events' spans.
+        merged_spans: t.Dict[Date, t.List[DateTimeSpan]] = {}
+        for date, spans in grouped_spans.items():
+            merged_spans[date] = []
+            spans.sort()
+            while spans:
+                span = spans.pop(0)
+                while spans:
+                    merged_span = cls.merge(span, spans[0])
+                    if merged_span is None:
+                        break
+                    else:
+                        span = merged_span
+                        spans.pop(0)
+                merged_spans[date].append(span)
+        return merged_spans

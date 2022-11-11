@@ -3,7 +3,6 @@ from collections import defaultdict
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import date as Date
-from datetime import time as Time
 
 from event import Event
 from date_time_span import DateTimeSpan
@@ -70,7 +69,7 @@ class Scheduler:
         events = self._schedule[date]
         if events:
             cursor = start_of_day
-            spans = Event.merge_date_time_spans(events)[date]
+            spans = Event.merge_many(events)[date]
             for span, next_span in zip(spans, spans[1:] + [None]):
                 # Cursor is at start of text span.
                 if cursor == span.start:
@@ -94,7 +93,7 @@ class Scheduler:
 
     def get_next_valid_date(self, date: Date):
         date += TimeDelta(days=1)
-        while date.weekday() not in Event._valid_days:
+        while date.weekday() not in Event._valid_weekdays:
             date += TimeDelta(days=1)
         return date
 
@@ -102,7 +101,7 @@ class Scheduler:
         date = start.date()
 
         # Get next valid date if on an invalid weekday.
-        if date.weekday() not in Event._valid_days:
+        if date.weekday() not in Event._valid_weekdays:
             date = self.get_next_valid_date(date)
 
         while True:
