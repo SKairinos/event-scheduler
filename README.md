@@ -20,7 +20,7 @@ Note: This was developed using VSCode. Some ease-of-use settings are pre-configu
 2. Enter event in the format specified in the task description. Repeat until satisfied.
 3. Enter blank line to stop event collection.
 
-Sample run:
+Sample run (on 2022/11/12 02:00):
 
 ```txt
 Enter blank line to stop event collection.
@@ -74,6 +74,14 @@ Rescheduled Event: 2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
         2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
         2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
         2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
+```
+
+- You cannot schedule events in the past.
+
+```txt
+New Event: 2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
+...
+Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
 ```
 
 ## Unit Tests
