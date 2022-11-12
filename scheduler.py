@@ -85,6 +85,11 @@ class Scheduler:
         :param timedelta: The duration of the event.
         :return: When the event can next start and end.
         """
+        # Start must at least be now.
+        now = DateTime.now()
+        if start < now:
+            start = now
+
         date = start.date()
 
         # Get next valid date if on an invalid weekday.

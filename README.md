@@ -24,25 +24,23 @@ Sample run:
 
 ```txt
 Enter blank line to stop event collection.
-New Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
-Scheduled Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
+New Event: 2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
+Scheduled Event: 2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
 New Event: 2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
-Scheduled Event: 2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
-New Event: 2022/11/12 09:00 -> 2022/11/12 10:00 - Dance party   
 root: 2 validation errors for Event
 start
-  InvalidWeekDayError: Dates must be between Monday and Friday (type=value_error.invalidweekday)
+  InThePastError: Date and times cannot be in the past (type=value_error.inthepast)
 end
-  InvalidWeekDayError: Dates must be between Monday and Friday (type=value_error.invalidweekday)
-Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 10:00 - Dance party
-New Event: 
-
-2022-08-23
-        2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
-        2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
+  InThePastError: Date and times cannot be in the past (type=value_error.inthepast)
+Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
+New Event: 2022/11/14 09:30 -> 2022/11/14 10:00 - Dance party
+Rescheduled Event: 2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
+New Event:
 
 2022-11-14
-        2022/11/14 09:00 -> 2022/11/14 10:00 - Dance party
+        2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
+        2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
+        2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
 ```
 
 ## Things to Note
@@ -52,32 +50,30 @@ New Event:
 ```txt
 root: 2 validation errors for Event
 start
-  InvalidWeekDayError: Dates must be between Monday and Friday (type=value_error.invalidweekday)
+  InThePastError: Date and times cannot be in the past (type=value_error.inthepast)
 end
-  InvalidWeekDayError: Dates must be between Monday and Friday (type=value_error.invalidweekday)
+  InThePastError: Date and times cannot be in the past (type=value_error.inthepast)
 ```
 
 - An event's scheduled start and end time are printed after each entry.
 
 ```txt
-Scheduled Event: 2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
+Scheduled Event: 2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
 ```
 
 - If an event is rescheduled, it will be stated.
 
 ```txt
-Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 10:00 - Dance party
+Rescheduled Event: 2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
 ```
 
 - The complete schedule will be printed once all events are collected.
 
 ```txt
-2022-08-23
-        2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee
-        2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons
-
 2022-11-14
-        2022/11/14 09:00 -> 2022/11/14 10:00 - Dance party
+        2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
+        2022/11/14 09:45 -> 2022/11/14 10:15 - Dance party
+        2022/11/14 15:00 -> 2022/11/14 16:00 - Meet Jamie for coffee
 ```
 
 ## Unit Tests

@@ -70,6 +70,7 @@ if __name__ == '__main__':
                         or Event.InvalidWeekDayError in field_errors['end']
                         or Event.InvalidTimeError in field_errors['start']
                         or Event.InvalidTimeError in field_errors['end']
+                        or Event.InThePastError in field_errors['start']
                     ):
                         # Reschedule event if datetimes are invalid.
                         event = scheduler.reschedule_invalid_event(**event_fields)

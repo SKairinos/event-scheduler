@@ -16,6 +16,7 @@ class Event(DateTimeSpan):
     # autopep8: off
     class InvalidWeekDayError(DateTimeSpan.Error): pass
     class InvalidTimeError(DateTimeSpan.Error): pass
+    class InThePastError(DateTimeSpan.Error): pass
     class StartOfDayError(DateTimeSpan.Error): pass
     class EndOfDayError(DateTimeSpan.Error): pass
     class InvalidFormatError(DateTimeSpan.Error): pass
@@ -44,6 +45,13 @@ class Event(DateTimeSpan):
         """Validate start and end times are between the start and end of the day."""
         if not (cls._start_of_day <= value.time() <= cls._end_of_day):
             raise cls.InvalidTimeError('Times must be between 9:00 and 18:00')
+        return value
+
+    @validator('start', 'end')
+    def not_in_the_past(cls, value: DateTime):
+        """Validate start and end times are not in the past."""
+        if value < DateTime.now():
+            raise cls.InThePastError('Date and times cannot be in the past')
         return value
 
     @validator('start')

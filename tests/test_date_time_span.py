@@ -10,7 +10,7 @@ from date_time_span import DateTimeSpan
 class TimeSpanTests(PyDanticTestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.date = Date(year=2022, month=11, day=10)
+        cls.date = Date(year=2032, month=11, day=10)
         cls.dts_0900_1000 = DateTimeSpan(
             start=DateTime.combine(cls.date, Time(hour=9, minute=0)),
             end=DateTime.combine(cls.date, Time(hour=10, minute=0))
@@ -147,4 +147,4 @@ class TimeSpanTests(PyDanticTestCase):
         self.assertNotEqual(self.dts_0900_1000, self.dts_1000_1030)
 
     def test__str__(self):
-        self.assertEqual(str(self.dts_0900_1000), '2022/11/10 09:00 -> 2022/11/10 10:00')
+        self.assertEqual(str(self.dts_0900_1000), '2032/11/10 09:00 -> 2032/11/10 10:00')

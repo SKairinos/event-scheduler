@@ -11,7 +11,7 @@ from event import Event
 class SchedulerTests(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.date = Date(year=2022, month=11, day=11)
+        cls.date = Date(year=2032, month=11, day=11)
 
         cls.time_0900 = Time(hour=9, minute=0)
         cls.time_0930 = Time(hour=9, minute=30)
@@ -164,9 +164,9 @@ class SchedulerTests(TestCase):
         self.assertListEqual(availabilities, [])
 
     def test_get_next_valid_date(self):
-        date = Date(year=2022, month=11, day=12)
+        date = Date(year=2032, month=11, day=12)
         date = self.scheduler.get_next_valid_date(date)
-        self.assertEqual(date, Date(year=2022, month=11, day=14))
+        self.assertEqual(date, Date(year=2032, month=11, day=15))
 
     def test_get_next_availability(self):
         self.scheduler._schedule[self.date] = [
@@ -178,6 +178,12 @@ class SchedulerTests(TestCase):
         self.assertEqual(start, DateTime.combine(self.date, self.time_1100))
         self.assertEqual(end, DateTime.combine(self.date, Time(hour=12, minute=0)))
 
+    def test_get_next_availability__past_start(self):
+        start = DateTime.combine(Date(year=2000, month=1, day=1), self.time_1000)
+        start, end = self.scheduler.get_next_availability(start, TimeDelta(hours=1))
+        self.assertEqual(start, DateTime.combine(start.date(), self.time_0900))
+        self.assertEqual(end, DateTime.combine(end.date(), self.time_1000))
+
     def test_reschedule_invalid_event(self):
         name = 'some meeting'
         event = self.scheduler.reschedule_invalid_event(
@@ -185,7 +191,7 @@ class SchedulerTests(TestCase):
             end=DateTime.combine(self.date, Time(hour=20, minute=0)),
             name=name
         )
-        date = Date(year=2022, month=11, day=14)
+        date = Date(year=2032, month=11, day=12)
         self.assertEqual(event, Event(
             start=DateTime.combine(date, self.time_0900),
             end=DateTime.combine(date, self.time_1000),
@@ -256,7 +262,7 @@ class SchedulerTests(TestCase):
         rescheduled = self.scheduler.schedule_event(self.event_0900_to_1000)
         self.assertTrue(rescheduled)
 
-        next_day = Date(year=2022, month=11, day=14)
+        next_day = Date(year=2032, month=11, day=12)
         self.assertDictEqual(self.scheduler._schedule, {
             self.date: [
                 self.event_0900_to_1800

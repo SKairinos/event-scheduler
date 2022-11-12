@@ -27,11 +27,11 @@ class MainTests(TestCase):
     def test_input_events(self):
         main = self.open_main_process('--input-events')
         output, _ = main.communicate(input=b'\n'.join([
-            b'2022/08/23 15:00 -> 2022/08/23 16:00 - Meet Jamie for coffee',
-            b'2022/08/23 16:15 -> 2022/08/23 17:00 - Guitar lessons',
+            b'2032/08/23 15:00 -> 2032/08/23 16:00 - Meet Jamie for coffee',
+            b'2032/08/23 16:15 -> 2032/08/23 17:00 - Guitar lessons',
         ]) + b'\n\n')
 
-        date = Date(year=2022, month=8, day=23)
+        date = Date(year=2032, month=8, day=23)
         print_schedule({
             date: [
                 Event(
