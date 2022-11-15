@@ -134,15 +134,8 @@ class Scheduler:
         :return: A flag denoting if the event was overlapping and rescheduled.
         """
         # Get all events for given date.
-        date = event.start.date()
-        events = self._schedule[date]
+        events = self._schedule[event.start.date()]
 
-        # Handle 1st event.
-        if not events:
-            events.append(event)
-            return False
-
-        # Handle 2nd+ event.
         for i, current_event in enumerate(events):
             # If event overlaps with current event, reschedule it.
             if event.overlaps_with(current_event, equals=False):
