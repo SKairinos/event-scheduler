@@ -86,7 +86,6 @@ Rescheduled Event: 2022/11/14 09:00 -> 2022/11/14 09:45 - Guitar lessons
 
 ## Unit Tests
 
-To run unit tests simply run: `python -m unittest`. Alternatively, use VSCode's (or IDE of choice) built in test runner.  
-Note: There's a known issue where 1 UT fails when run in parallel with the other UTs. However, if you run it independently, it passes.
+To run unit tests simply run: `python -m unittest`. Alternatively, use VSCode's (or IDE of choice) built in test runner.
 
 This solution has high test coverage so it's recommended to review the UTs to better understand how this solution is intended to work.

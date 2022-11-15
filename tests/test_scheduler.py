@@ -22,53 +22,53 @@ class SchedulerTests(TestCase):
         cls.time_1700 = Time(hour=17, minute=0)
         cls.time_1800 = Time(hour=18, minute=0)
 
-        cls.event_0900_to_0930 = Event(
-            start=DateTime.combine(cls.date, cls.time_0900),
-            end=DateTime.combine(cls.date, cls.time_0930),
+    def setUp(self) -> None:
+        self.event_0900_to_0930 = Event(
+            start=DateTime.combine(self.date, self.time_0900),
+            end=DateTime.combine(self.date, self.time_0930),
             name='Meeting between 09:00 and 09:30'
         )
-        cls.event_0930_to_1000 = Event(
-            start=DateTime.combine(cls.date, cls.time_0930),
-            end=DateTime.combine(cls.date, cls.time_1000),
+        self.event_0930_to_1000 = Event(
+            start=DateTime.combine(self.date, self.time_0930),
+            end=DateTime.combine(self.date, self.time_1000),
             name='Meeting between 09:30 and 10:00'
         )
-        cls.event_0900_to_1000 = Event(
-            start=DateTime.combine(cls.date, cls.time_0900),
-            end=DateTime.combine(cls.date, cls.time_1000),
+        self.event_0900_to_1000 = Event(
+            start=DateTime.combine(self.date, self.time_0900),
+            end=DateTime.combine(self.date, self.time_1000),
             name='Meeting between 09:00 and 10:00'
         )
-        cls.event_1000_to_1030 = Event(
-            start=DateTime.combine(cls.date, cls.time_1000),
-            end=DateTime.combine(cls.date, cls.time_1030),
+        self.event_1000_to_1030 = Event(
+            start=DateTime.combine(self.date, self.time_1000),
+            end=DateTime.combine(self.date, self.time_1030),
             name='Meeting between 10:00 and 10:30'
         )
-        cls.event_1030_to_1100 = Event(
-            start=DateTime.combine(cls.date, cls.time_1030),
-            end=DateTime.combine(cls.date, cls.time_1100),
+        self.event_1030_to_1100 = Event(
+            start=DateTime.combine(self.date, self.time_1030),
+            end=DateTime.combine(self.date, self.time_1100),
             name='Meeting between 10:30 and 11:00'
         )
-        cls.event_1000_to_1100 = Event(
-            start=DateTime.combine(cls.date, cls.time_1000),
-            end=DateTime.combine(cls.date, cls.time_1100),
+        self.event_1000_to_1100 = Event(
+            start=DateTime.combine(self.date, self.time_1000),
+            end=DateTime.combine(self.date, self.time_1100),
             name='Meeting between 10:00 and 11:00'
         )
-        cls.event_1030_to_1130 = Event(
-            start=DateTime.combine(cls.date, cls.time_1030),
-            end=DateTime.combine(cls.date, cls.time_1130),
+        self.event_1030_to_1130 = Event(
+            start=DateTime.combine(self.date, self.time_1030),
+            end=DateTime.combine(self.date, self.time_1130),
             name='Meeting between 10:30 and 11:30'
         )
-        cls.event_1700_to_1800 = Event(
-            start=DateTime.combine(cls.date, cls.time_1700),
-            end=DateTime.combine(cls.date, cls.time_1800),
+        self.event_1700_to_1800 = Event(
+            start=DateTime.combine(self.date, self.time_1700),
+            end=DateTime.combine(self.date, self.time_1800),
             name='Meeting between 17:00 and 18:00'
         )
-        cls.event_0900_to_1800 = Event(
-            start=DateTime.combine(cls.date, cls.time_0900),
-            end=DateTime.combine(cls.date, cls.time_1800),
+        self.event_0900_to_1800 = Event(
+            start=DateTime.combine(self.date, self.time_0900),
+            end=DateTime.combine(self.date, self.time_1800),
             name='Meeting between 09:00 and 18:00'
         )
 
-    def setUp(self) -> None:
         # Set up new scheduler before each test.
         self.scheduler = Scheduler()
 
