@@ -6,6 +6,7 @@ from datetime import time as Time
 
 from scheduler import Scheduler
 from event import Event
+import utilities as utils
 
 
 class SchedulerTests(TestCase):
@@ -180,9 +181,11 @@ class SchedulerTests(TestCase):
 
     def test_get_next_availability__past_start(self):
         start = DateTime.combine(Date(year=2000, month=1, day=1), self.time_1000)
-        start, end = self.scheduler.get_next_availability(start, TimeDelta(hours=1))
-        self.assertEqual(start, DateTime.combine(start.date(), self.time_0900))
-        self.assertEqual(end, DateTime.combine(end.date(), self.time_1000))
+        timedelta = TimeDelta(hours=1)
+        start, end = self.scheduler.get_next_availability(start, timedelta)
+        expected_start = utils.round_up_datetime(DateTime.now(), TimeDelta(minutes=1))
+        self.assertEqual(start, expected_start)
+        self.assertEqual(end, expected_start + timedelta)
 
     def test_reschedule_invalid_event(self):
         name = 'some meeting'

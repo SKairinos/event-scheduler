@@ -1,17 +1,18 @@
 import typing as t
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import date as Date
 
 from event import Event
 from date_time_span import DateTimeSpan
+import utilities as utils
 
 
 class Scheduler:
     """This will schedule events based on availability."""
 
-    Schedule = t.DefaultDict[Date, t.List[Event]]
+    Schedule = t.OrderedDict[Date, t.List[Event]]
 
     class Availability(DateTimeSpan):
         """A span representing an availability in the schedule."""
@@ -19,18 +20,20 @@ class Scheduler:
 
     def __init__(self) -> None:
         # Schedule is a dict where the key is a date and the value is a list of events in order.
-        self._schedule: Scheduler.Schedule = defaultdict(list)
+        self._schedule: t.DefaultDict[Date, t.List[Event]] = defaultdict(list)
 
     @property
     def schedule(self) -> Schedule:
         """Create a deep copy of the original schedule so that it may not be directly modified.
 
-        :return: A deep copy of the schedule.
+        :return: A deep copy of the schedule ordered by date.
         """
-        return {
-            date: [event.copy() for event in events]
-            for date, events in self._schedule.items()
-        }
+        ordered_dates = list(self._schedule.keys())
+        ordered_dates.sort()
+        return OrderedDict([
+            (date, [event.copy() for event in self._schedule[date]])
+            for date in ordered_dates
+        ])
 
     def get_availabilities(self, date: Date):
         """Get all the unused datetime spans for a given date.
@@ -79,7 +82,7 @@ class Scheduler:
         return date
 
     def get_next_availability(self, start: DateTime, timedelta: TimeDelta):
-        """Get the next availability for an event based on its original start and duration.  
+        """Get the next availability for an event based on its original start and duration.
 
         :param start: The original start of the event.
         :param timedelta: The duration of the event.
@@ -88,7 +91,7 @@ class Scheduler:
         # Start must at least be now.
         now = DateTime.now()
         if start < now:
-            start = now
+            start = utils.round_up_datetime(now, TimeDelta(minutes=1))
 
         date = start.date()
 
@@ -98,8 +101,13 @@ class Scheduler:
 
         while True:
             for availability in self.get_availabilities(date):
-                if availability.start >= start and availability.timedelta >= timedelta:
-                    return availability.start, availability.start + timedelta
+                if availability.timedelta >= timedelta:
+                    new_start = availability.start
+                    if new_start < start:
+                        if (availability.end - start) < timedelta:
+                            continue
+                        new_start = start
+                    return new_start, new_start + timedelta
             date = self.get_next_valid_date(date)
 
     def reschedule_overlapping_event(self, event: Event):
