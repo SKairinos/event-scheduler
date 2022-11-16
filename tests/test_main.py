@@ -22,8 +22,6 @@ class MainTests(TestCase):
             stdout=subprocess.PIPE
         )
 
-    # def assert_schedule(self, schedule: Scheduler.Schedule):
-
     def test_input_events(self):
         main = self.open_main_process('--input-events')
         output, _ = main.communicate(input=b'\n'.join([
