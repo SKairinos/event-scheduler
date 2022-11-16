@@ -13,9 +13,10 @@ from event import Event
 def print_schedule(schedule: Scheduler.Schedule):
     """Pretty prints the schedule."""
     for date, events in schedule.items():
-        print(f'\n{date}')
-        for event in events:
-            print(f'\t{event}')
+        if events:
+            print(f'\n{date}')
+            for event in events:
+                print(f'\t{event}')
 
 
 def get_field_errors(error: ValidationError):
@@ -77,7 +78,6 @@ if __name__ == '__main__':
                         print('Rescheduled Event:', event)
                 except Exception as ex:
                     logging.error('Unknown error. Skipping this event.')
-                    break
             except Event.Error as error:
                 logging.error(error)
             except Exception as ex:
