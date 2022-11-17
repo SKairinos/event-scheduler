@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch, Mock
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import date as Date
@@ -164,11 +165,6 @@ class SchedulerTests(TestCase):
         availabilities = self.scheduler.get_availabilities(self.date)
         self.assertListEqual(availabilities, [])
 
-    def test_get_next_valid_date(self):
-        date = Date(year=2032, month=11, day=12)
-        date = self.scheduler.get_next_valid_date(date)
-        self.assertEqual(date, Date(year=2032, month=11, day=15))
-
     def test_get_next_availability(self):
         self.scheduler._schedule[self.date] = [
             self.event_0930_to_1000,
@@ -179,11 +175,35 @@ class SchedulerTests(TestCase):
         self.assertEqual(start, DateTime.combine(self.date, self.time_1100))
         self.assertEqual(end, DateTime.combine(self.date, Time(hour=12, minute=0)))
 
-    def test_get_next_availability__past_start(self):
+    @patch('scheduler.DateTime')
+    def test_get_next_availability__refresh_start_to_today(self, scheduler__DateTime: Mock):
+        # Mock DateTime's class methods.
+        now = DateTime.combine(self.date, Time(hour=11, minute=9, second=12))
+        now_returns = [now, now + TimeDelta(minutes=1)]
+        scheduler__DateTime.now.side_effect = now_returns
+        scheduler__DateTime.combine.side_effect = DateTime.combine
+
+        # Assert event fits inside availability.
         start = DateTime.combine(Date(year=2000, month=1, day=1), self.time_1000)
         timedelta = TimeDelta(hours=1)
         start, end = self.scheduler.get_next_availability(start, timedelta)
-        expected_start = utils.round_up_datetime(DateTime.now(), TimeDelta(minutes=1))
+        expected_start = utils.round_up_datetime(now_returns[-1], TimeDelta(minutes=1))
+        self.assertEqual(start, expected_start)
+        self.assertEqual(end, expected_start + timedelta)
+
+    @patch('scheduler.DateTime')
+    def test_get_next_availability__refresh_start_to_next_day(self, scheduler__DateTime: Mock):
+        # Mock DateTime's class methods.
+        now = DateTime.combine(self.date, Time(hour=23, minute=59))
+        now_returns = [now, now + TimeDelta(minutes=1), now + TimeDelta(minutes=2)]
+        scheduler__DateTime.now.side_effect = now_returns
+        scheduler__DateTime.combine.side_effect = DateTime.combine
+
+        # Assert availability for the next date is retrieved after start is refreshed.
+        start = DateTime.combine(Date(year=2000, month=1, day=1), self.time_1000)
+        timedelta = TimeDelta(hours=1)
+        start, end = self.scheduler.get_next_availability(start, timedelta)
+        expected_start = DateTime.combine(now_returns[-1].date(), self.time_0900)
         self.assertEqual(start, expected_start)
         self.assertEqual(end, expected_start + timedelta)
 

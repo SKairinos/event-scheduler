@@ -3,6 +3,7 @@ from collections import defaultdict, OrderedDict
 from datetime import datetime as DateTime
 from datetime import timedelta as TimeDelta
 from datetime import date as Date
+from datetime import time as Time
 
 from event import Event
 from date_time_span import DateTimeSpan
@@ -70,45 +71,62 @@ class Scheduler:
 
         return availabilities
 
-    def get_next_valid_date(self, date: Date):
-        """Get the next valid date from the given date based on which weekdays are valid.
-
-        :param date: The date to get the next valid date from.
-        :return: The next valid date based on weekdays.
-        """
-        date += TimeDelta(days=1)
-        while date.weekday() not in Event._valid_weekdays:
-            date += TimeDelta(days=1)
-        return date
-
     def get_next_availability(self, start: DateTime, timedelta: TimeDelta):
-        """Get the next availability for an event based on its original start and duration.
+        """Get the next availability for an event based on its original start and duration. A
+        valid availability is one that's in the future and on an allowed week day. 
 
         :param start: The original start of the event.
         :param timedelta: The duration of the event.
         :return: When the event can next start and end.
         """
-        # Start must at least be now.
-        now = DateTime.now()
-        if start < now:
-            start = utils.round_up_datetime(now, TimeDelta(minutes=1))
 
-        date = start.date()
+        def set_start_to_next_valid_date():
+            nonlocal start
+            date = start.date() + TimeDelta(days=1)
+            while date.weekday() not in Event._valid_weekdays:
+                date += TimeDelta(days=1)
+            start = DateTime.combine(date, Time())
 
-        # Get next valid date if on an invalid weekday.
-        if date.weekday() not in Event._valid_weekdays:
-            date = self.get_next_valid_date(date)
+        def refresh_start():
+            nonlocal start
+            min_start = DateTime.now()
+            # Start must at least be now.
+            if start < min_start:
+                start = utils.round_up_datetime(min_start, TimeDelta(minutes=1))
+            # Start must be on a valid weekday.
+            if start.date().weekday() not in Event._valid_weekdays:
+                set_start_to_next_valid_date()
 
+        # Ensure start is at least now and on a valid weekday.
+        refresh_start()
         while True:
+            # Get availabilities for start date.
+            date = start.date()
             for availability in self.get_availabilities(date):
-                if availability.timedelta >= timedelta:
-                    new_start = availability.start
-                    if new_start < start:
-                        if (availability.end - start) < timedelta:
-                            continue
-                        new_start = start
-                    return new_start, new_start + timedelta
-            date = self.get_next_valid_date(date)
+                # If availability's duration is less than event's, get next availability.
+                if availability.timedelta < timedelta:
+                    continue
+
+                # Refresh start after elapsed processing time.
+                # If date has incremented, get availabilities for the next date.
+                refresh_start()
+                if start.date() != date:
+                    break
+
+                # If availability's start is >= event's, set event's start to availability's.
+                if availability.start >= start:
+                    start = availability.start
+                # Else validate if event can fit inside availability from event's original start.
+                elif (availability.end - start) < timedelta:
+                    continue
+
+                # Return new start and end.
+                return start, start + timedelta
+
+            # At this point, no suitable availabilities were found.
+            # If date did not increment during processing, get availabilities for next valid date.
+            if start.date() == date:
+                set_start_to_next_valid_date()
 
     def reschedule_overlapping_event(self, event: Event):
         """Edits an overlapping event's start and end to the next availability and adds it to the schedule.
