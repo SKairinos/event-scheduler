@@ -120,7 +120,13 @@ class Scheduler:
         event.start, event.end = start, end
         self.schedule_event(event)
 
-    def reschedule_invalid_event(self, start: DateTime, end: DateTime, name: str):
+    def reschedule_invalid_event(
+        self,
+        start: DateTime,
+        end: DateTime,
+        name: str,
+        created_at: DateTime
+    ):
         """Creates a new event at the next availability for an invalid event and adds it to the schedule.
 
         :param start: The event's original start.
@@ -129,7 +135,6 @@ class Scheduler:
         :return: A valid event with its start and end set at the next availability.
         """
         # Create event at next availability.
-        created_at = DateTime.now()
         start, end = self.get_next_availability(start, timedelta=end - start)
         event = Event(start=start, end=end, name=name, created_at=created_at)
         self.schedule_event(event)

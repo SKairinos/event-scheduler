@@ -99,6 +99,9 @@ class Event(DateTimeSpan):
         :raises cls.InvalidDateTimeFormatError: If the start and end are not in the expected format.
         :return: A dict with the named fields needed to create an event. event = Event(**fields). 
         """
+        # Get datetime stamp before any processing time elapses.
+        created_at = DateTime.now()
+
         # Match event pattern.
         match = re.match(r'(.+)->(.+)-(.+)', event)
         if not match:
@@ -121,6 +124,7 @@ class Event(DateTimeSpan):
                 ) from ex
 
         return {
+            'created_at': created_at,
             'start': to_datetime(start),
             'end': to_datetime(end),
             'name': name

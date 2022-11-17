@@ -190,6 +190,7 @@ class SchedulerTests(TestCase):
     def test_reschedule_invalid_event(self):
         name = 'some meeting'
         event = self.scheduler.reschedule_invalid_event(
+            created_at=DateTime.combine(self.date, Time(hour=0, minute=0)),
             start=DateTime.combine(self.date, Time(hour=19, minute=0)),
             end=DateTime.combine(self.date, Time(hour=20, minute=0)),
             name=name
