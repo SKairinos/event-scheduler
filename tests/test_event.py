@@ -74,19 +74,6 @@ class EventTests(PyDanticTestCase):
             name='Meeting after 6pm'
         )
 
-    def test_validator__not_in_the_past(self):
-        # Assert cannot start or end before start of day.
-        self.assert_raises_validation_error(
-            field_errors=[
-                ('start', Event.InThePastError),
-                ('end', Event.InThePastError)
-            ],
-            model_type=Event,
-            start=DateTime(year=2000, month=11, day=10, hour=9, minute=0),
-            end=DateTime(year=2000, month=11, day=10, hour=9, minute=30),
-            name='Meeting in the past'
-        )
-
     def test_validator__not_end_of_day(self):
         # Assert cannot start meeting at end of day.
         self.assert_raises_validation_error(
@@ -148,6 +135,18 @@ class EventTests(PyDanticTestCase):
             start=DateTime(year=2032, month=11, day=9, hour=9, minute=0),
             end=DateTime(year=2032, month=11, day=10, hour=10, minute=0),
             name='Meeting starting at end of day'
+        )
+
+    def test_root_validator__not_in_the_past(self):
+        # Assert cannot start or end before start of day.
+        self.assert_raises_validation_error(
+            field_errors=[
+                ('__root__', Event.InThePastError)
+            ],
+            model_type=Event,
+            start=DateTime(year=2000, month=11, day=10, hour=9, minute=0),
+            end=DateTime(year=2000, month=11, day=10, hour=9, minute=30),
+            name='Meeting in the past'
         )
 
     def test__str__(self):

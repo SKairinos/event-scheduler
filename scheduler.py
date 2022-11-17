@@ -129,8 +129,9 @@ class Scheduler:
         :return: A valid event with its start and end set at the next availability.
         """
         # Create event at next availability.
+        created_at = DateTime.now()
         start, end = self.get_next_availability(start, timedelta=end - start)
-        event = Event(start=start, end=end, name=name)
+        event = Event(start=start, end=end, name=name, created_at=created_at)
         self.schedule_event(event)
         return event
 

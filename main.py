@@ -67,11 +67,11 @@ if __name__ == '__main__':
                     field_errors = get_field_errors(error)
                     # Reschedule event if set on invalid weekday or time.
                     if Event.TimeDeltaTooLargeError not in field_errors['__root__'] and (
-                        Event.InvalidWeekDayError in field_errors['start']
+                        Event.InThePastError in field_errors['__root__']
+                        or Event.InvalidWeekDayError in field_errors['start']
                         or Event.InvalidWeekDayError in field_errors['end']
                         or Event.InvalidTimeError in field_errors['start']
                         or Event.InvalidTimeError in field_errors['end']
-                        or Event.InThePastError in field_errors['start']
                     ):
                         # Reschedule event if datetimes are invalid.
                         event = scheduler.reschedule_invalid_event(**event_fields)

@@ -25,6 +25,7 @@ class Event(DateTimeSpan):
     # autopep8: on
 
     name: str = Field(min_length=1)
+    created_at: DateTime = Field(default_factory=DateTime.now)
 
     # Setting to control which weekdays an event can be created for. 0=Monday -> 6=Sunday.
     _valid_weekdays = [0, 1, 2, 3, 4]
@@ -45,13 +46,6 @@ class Event(DateTimeSpan):
         """Validate start and end times are between the start and end of the day."""
         if not (cls._start_of_day <= value.time() <= cls._end_of_day):
             raise cls.InvalidTimeError('Times must be between 9:00 and 18:00')
-        return value
-
-    @validator('start', 'end')
-    def not_in_the_past(cls, value: DateTime):
-        """Validate start and end times are not in the past."""
-        if value < DateTime.now():
-            raise cls.InThePastError('Date and times cannot be in the past')
         return value
 
     @validator('start')
@@ -79,6 +73,15 @@ class Event(DateTimeSpan):
             end_of_day = DateTime.combine(today, cls._end_of_day)
             if end - start > end_of_day - start_of_day:
                 raise cls.TimeDeltaTooLargeError('The timedelta between start and end is too large')
+        return values
+
+    @root_validator
+    def not_in_the_past(cls, values: t.Dict[str, t.Any]):
+        """Validate does not start in the past."""
+        start: t.Optional[DateTime] = values.get('start')
+        created_at: t.Optional[DateTime] = values.get('created_at')
+        if start is not None and created_at is not None and start < created_at:
+            raise cls.InThePastError('Cannot start in the past')
         return values
 
     def __str__(self) -> str:
